@@ -4,7 +4,7 @@
       tileSize = 256,
       maxCost = 1600,
       gm = new GlobalMercator(),
-      tileStitcher = tileStitcher('tiles/{z}/{x}/{y}.png', {scheme:'tms'}),
+      ts = tileStitcher('tiles/{z}/{x}/{y}.png', {scheme:'tms'}),
       map = L.map('map'),
       layerUrl = 'http://{s}.tiles.mapbox.com/v3/atogle.map-vo4oycva/{z}/{x}/{y}.png',
       attribution = 'Map data &copy; OpenStreetMap contributors, CC-BY-SA <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
@@ -123,7 +123,7 @@
     canvasLayer = L.imageOverlay.canvas(L.latLngBounds([swTileBoundsLatLng[0], swTileBoundsLatLng[1]],[neTileBoundsLatLng[2], neTileBoundsLatLng[3]]));
     canvasLayer.addTo(map);
 
-    tileStitcher.stitch(swTile[0], swTile[1], neTile[0], neTile[1], zoom, function(stitchedCanvas){
+    ts.stitch(swTile[0], swTile[1], neTile[0], neTile[1], zoom, function(stitchedCanvas){
       draw(stitchedCanvas, canvasLayer.canvas, pixel);
 
       // For debugging:
