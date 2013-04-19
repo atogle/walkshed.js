@@ -12,7 +12,7 @@
       canvasLayer;
 
   map
-    .setView([39.9524, -75.1636], 15)
+    .setView([39.9524, -75.1636], 14)
     .addLayer(layer);
 
   function to2D(array1D, width) {
@@ -24,6 +24,22 @@
     }
 
     return array2D;
+  }
+
+  function getColor(percentage) {
+    if (percentage <= 0.25) {
+      return [26,150,65,200];
+    } else if (percentage <= 0.5) {
+      return [166,217,106,200];
+    } else if (percentage <= 0.75) {
+      return [255,255,191,200];
+    } else if (percentage <= 0.95) {
+      return [253,174,97,200];
+    } else if (percentage <= 0.999) {
+      return [215,25,28,200];
+    } else {
+      return [0,0,0,0];
+    }
   }
 
   function draw(frictionCanvas, mapCanvas, sourcePixel) {
@@ -71,18 +87,17 @@
     n=0;
     for(row=0; row<h; row++){
       for(col=0; col<w; col++){
-        // color = ((costDistanceRaster[row][col] || maxCost) / maxCost) * 255,
-        color = costDistanceRaster[row][col] === maxCost ? 0 : 255;
+        color = getColor((costDistanceRaster[row][col] || maxCost) / maxCost);
         if (costDistanceRaster[row][col] === maxCost) {
           data[4*n] = 0;
           data[4*n + 1] = 0;
           data[4*n + 2] = 0;
           data[4*n + 3] = 255;
         } else {
-          data[4*n] = 0;
-          data[4*n + 1] = 88;
-          data[4*n + 2] = 36;
-          data[4*n + 3] = 255 - (((costDistanceRaster[row][col] || maxCost) / maxCost) * 255);
+          data[4*n] = color[0];
+          data[4*n + 1] = color[1];
+          data[4*n + 2] = color[2];
+          data[4*n + 3] = color[3];
         }
         n++;
       }
