@@ -1,3 +1,5 @@
+/*globals L GlobalMercator tileStitcher MA */
+
 (function(){
   var zoom = 14,
       buffer = 1600,
@@ -8,7 +10,7 @@
       map = L.map('map'),
       layerUrl = 'http://{s}.tiles.mapbox.com/v3/atogle.map-vo4oycva/{z}/{x}/{y}.png',
       attribution = 'Map data &copy; OpenStreetMap contributors, CC-BY-SA <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
-      layer = new L.TileLayer(layerUrl, {maxZoom: 17, attribution: attribution, subdomains: 'abcd'}),
+      layer = L.tileLayer(layerUrl, {maxZoom: 17, attribution: attribution, subdomains: 'abcd'}),
       canvasLayer;
 
   map
@@ -27,24 +29,23 @@
   }
 
   function getColor(percentage) {
-    if (percentage <= 0.25) {
+    if (percentage <= 0.2) {
       return [26,150,65,200];
-    } else if (percentage <= 0.5) {
+    } else if (percentage <= 0.4) {
       return [166,217,106,200];
-    } else if (percentage <= 0.75) {
+    } else if (percentage <= 0.6) {
       return [255,255,191,200];
-    } else if (percentage <= 0.95) {
+    } else if (percentage <= 0.8) {
       return [253,174,97,200];
     } else if (percentage <= 0.999) {
-      return [215,25,28,200];
+      return [244,109,67,200];
     } else {
       return [0,0,0,0];
     }
   }
 
   function draw(frictionCanvas, mapCanvas, sourcePixel) {
-    var cd = costDistance(),
-        mapCtx = mapCanvas.getContext('2d'),
+    var mapCtx = mapCanvas.getContext('2d'),
         frictionCtx = frictionCanvas.getContext('2d'),
         w = frictionCanvas.width,
         h = frictionCanvas.height,
@@ -81,7 +82,7 @@
     }
 
     // Calculate the costdistance raster
-    costDistanceRaster = cd.calculate(frictionRaster, sourceRaster, maxCost);
+    costDistanceRaster = MA.costDistance(frictionRaster, sourceRaster, maxCost);
 
     // Turn cost into pixels to display
     n=0;
