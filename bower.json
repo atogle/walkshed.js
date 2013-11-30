@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "dependencies": {
     "modernizr": "~2.6.2",
-    "mapalgebra.js": "git@github.com:atogle/mapalgebra.js.git#0.1.0"
+    "mapalgebra.js": "git@github.com:atogle/mapalgebra.js.git#0.1.0",
+    "Leaflet.ImageOverlay.Canvas": "git@github.com:atogle/Leaflet.ImageOverlay.Canvas.git#0.1.0"
   },
   "devDependencies": {}
 }
