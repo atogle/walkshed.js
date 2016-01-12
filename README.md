@@ -6,9 +6,11 @@ How to run the app locally:
 
 1. Install node.js and dependencies:
 
-  `npm install
-  npm install grunt
-  npm install bower`
+  `npm install`
+  
+  `npm install grunt`
+  
+  `npm install bower`
 
 2. Install bower client-side dependencies (modernizr, Leaflet, etc.):
 
