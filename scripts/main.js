@@ -5,8 +5,6 @@
       buffer = 1600,
       tileSize = 256,
       maxCost = 1600,
-      gm = new GlobalMercator(),
-      ts = tileStitcher('tiles/{z}/{x}/{y}.png', {scheme:'tms'}),
       map = L.map('map'),
       layerUrl = 'http://{s}.tiles.mapbox.com/v3/atogle.map-vo4oycva/{z}/{x}/{y}.png',
       attribution = 'Map data &copy; OpenStreetMap contributors, CC-BY-SA <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
@@ -110,42 +108,45 @@
   }
 
   map.on('click', function(evt) {
-    // NOTE! this is TMS specific logic
-    var originMeters = gm.LatLonToMeters(evt.latlng.lat, evt.latlng.lng),
-        // Southwest, MinX/MinY Tile
-        swTile = gm.MetersToTile(originMeters[0]-buffer, originMeters[1]-buffer, zoom),
-        swTileBoundsMeters = gm.TileBounds(swTile[0], swTile[1], zoom),
-        swTileBoundsLatLng = gm.TileLatLonBounds(swTile[0], swTile[1], zoom),
-        // Northeast, MaxX/MaxY Tile
-        neTile = gm.MetersToTile(originMeters[0]+buffer, originMeters[1]+buffer, zoom),
-        neTileBoundsMeters = gm.TileBounds(neTile[0], neTile[1], zoom),
-        neTileBoundsLatLng = gm.TileLatLonBounds(neTile[0], neTile[1], zoom),
+    var side = 800,
+        half = side/2,
+        zoom = 14,
+        latLngPt = map.latLngToContainerPoint(evt.latlng),
+        swLatLng = map.containerPointToLatLng(latLngPt.add(L.point(-half, half))),
+        neLatLng = map.containerPointToLatLng(latLngPt.add(L.point(half, -half)))
+        frictionUrl = 'https://api.mapbox.com/styles/v1/atogle/cirjkl8m80000gengl4sxeicn/static/'+evt.latlng.lng+','+evt.latlng.lat+','+zoom+',0.00,0.00/'+side+'x'+side+'?access_token=pk.eyJ1IjoiYXRvZ2xlIiwiYSI6InBDWEFUY3cifQ.0XD7J9ZuFNLrmuNpuKlcnQ&logo=false&attribution=false',
+        imageObj = new Image(),
+        frictionCanvas = document.createElement('canvas'),
+        pixel = {
+          x: half,
+          y: half
+        };
 
-        costImageData = [],
-        pixel = {};
-
-    var xMetersDiff = neTileBoundsMeters[2] - swTileBoundsMeters[0],
-        yMetersDiff = neTileBoundsMeters[3] - swTileBoundsMeters[1],
-        mergedSizeX = (neTile[0] - swTile[0] + 1) * tileSize,
-        mergedSizeY = (neTile[1] - swTile[1] + 1) * tileSize;
-
-    pixel.x = Math.round(mergedSizeX * (originMeters[0] - swTileBoundsMeters[0]) / xMetersDiff);
-    pixel.y = mergedSizeY - Math.round(mergedSizeY * (originMeters[1] - swTileBoundsMeters[1]) / yMetersDiff);
+    frictionCanvas.width = side;
+    frictionCanvas.height = side;
 
     // TODO: add setBounds() to canvas layer?
     if (canvasLayer) {
       map.removeLayer(canvasLayer);
     }
-    canvasLayer = L.imageOverlay.canvas(L.latLngBounds([swTileBoundsLatLng[0], swTileBoundsLatLng[1]],[neTileBoundsLatLng[2], neTileBoundsLatLng[3]]));
+    canvasLayer = L.imageOverlay.canvas(L.latLngBounds(swLatLng, neLatLng));
     canvasLayer.addTo(map);
 
-    ts.stitch(swTile[0], swTile[1], neTile[0], neTile[1], zoom, function(stitchedCanvas){
-      draw(stitchedCanvas, canvasLayer.canvas, pixel);
+    imageObj.crossOrigin = 'anonymous';
+    imageObj.onload = function() {
+      var w = this.width,
+          h = this.height,
+          ctx = frictionCanvas.getContext('2d');
 
-      // For debugging:
-      // canvasLayer.canvas.width = stitchedCanvas.width;
-      // canvasLayer.canvas.height = stitchedCanvas.height;
-      // canvasLayer.canvas.getContext('2d').drawImage(stitchedCanvas, 0, 0);
-    });
+      ctx.drawImage(this, 0, 0);
+
+      draw(frictionCanvas, canvasLayer.canvas, pixel);
+    };
+    imageObj.src = frictionUrl;
+
+    // For debugging:
+    // canvasLayer.canvas.width = stitchedCanvas.width;
+    // canvasLayer.canvas.height = stitchedCanvas.height;
+    // canvasLayer.canvas.getContext('2d').drawImage(stitchedCanvas, 0, 0);
   });
 })();
