@@ -1,10 +1,11 @@
-/*globals L GlobalMercator tileStitcher MA */
+/*globals L GlobalMercator MA */
 
 (function(){
   var zoom = 14,
-      buffer = 1600,
-      tileSize = 256,
-      maxCost = 1600,
+      maxCost = 800,
+      sidePx = 800,
+      halfSidePx = sidePx/2,
+      gm = new GlobalMercator(),
       map = L.map('map'),
       layerUrl = 'http://{s}.tiles.mapbox.com/v3/atogle.map-vo4oycva/{z}/{x}/{y}.png',
       attribution = 'Map data &copy; OpenStreetMap contributors, CC-BY-SA <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
@@ -12,7 +13,7 @@
       canvasLayer;
 
   map
-    .setView([39.9524, -75.1636], 14)
+    .setView([39.9524, -75.1636], 13)
     .addLayer(layer);
 
   function to2D(array1D, width) {
@@ -108,41 +109,55 @@
   }
 
   map.on('click', function(evt) {
-    var side = 800,
-        half = side/2,
-        zoom = 14,
-        latLngPt = map.latLngToContainerPoint(evt.latlng),
-        swLatLng = map.containerPointToLatLng(latLngPt.add(L.point(-half, half))),
-        neLatLng = map.containerPointToLatLng(latLngPt.add(L.point(half, -half)))
-        frictionUrl = 'https://api.mapbox.com/styles/v1/atogle/cirjkl8m80000gengl4sxeicn/static/'+evt.latlng.lng+','+evt.latlng.lat+','+zoom+',0.00,0.00/'+side+'x'+side+'?access_token=pk.eyJ1IjoiYXRvZ2xlIiwiYSI6InBDWEFUY3cifQ.0XD7J9ZuFNLrmuNpuKlcnQ&logo=false&attribution=false',
-        imageObj = new Image(),
+    // The Mapbox static map API buffers an image with pixels, not a bounding box. 
+    // This code converts the latlng to mercator meters to pixels, buffers it 
+    // (with pixels), and then converts it back to meters and then to a latlng
+    // bounding box so it can be used in canvasLayer and put on the map.
+    var clickMeters = gm.LatLonToMeters(evt.latlng.lat, evt.latlng.lng),
+        clickPixel = gm.MetersToPixels(clickMeters[0], clickMeters[1], zoom),
+        swMeters = gm.PixelsToMeters(clickPixel[0]-halfSidePx, clickPixel[1]+halfSidePx, zoom),
+        neMeters = gm.PixelsToMeters(clickPixel[0]+halfSidePx, clickPixel[1]-halfSidePx, zoom),
+        swLatLngArray = gm.MetersToLatLon(swMeters[0], swMeters[1]),
+        neLatLngArray = gm.MetersToLatLon(neMeters[0], neMeters[1]),
+        swLatLng = L.latLng(swLatLngArray[0], swLatLngArray[1]),
+        neLatLng = L.latLng(neLatLngArray[0], neLatLngArray[1]),
+        // Why zoom-1? Is it retina?
+        frictionUrl = 'https://api.mapbox.com/styles/v1/atogle/cirjkl8m80000gengl4sxeicn/static/'+evt.latlng.lng+','+evt.latlng.lat+','+(zoom-1)+',0.00,0.00/'+sidePx+'x'+sidePx+'?access_token=pk.eyJ1IjoiYXRvZ2xlIiwiYSI6InBDWEFUY3cifQ.0XD7J9ZuFNLrmuNpuKlcnQ&logo=false&attribution=false',
+        // Used to load the image data into the canvas
+        image = new Image(),
         frictionCanvas = document.createElement('canvas'),
-        pixel = {
-          x: half,
-          y: half
+        // The starting point for the costdistance algorithm
+        originPixel = {
+          x: halfSidePx,
+          y: halfSidePx
         };
 
-    frictionCanvas.width = side;
-    frictionCanvas.height = side;
+    frictionCanvas.width = sidePx;
+    frictionCanvas.height = sidePx;
 
     // TODO: add setBounds() to canvas layer?
     if (canvasLayer) {
       map.removeLayer(canvasLayer);
     }
     canvasLayer = L.imageOverlay.canvas(L.latLngBounds(swLatLng, neLatLng));
+    // For debugging:
+    // canvasLayer = L.imageOverlay(frictionUrl, L.latLngBounds(swLatLng, neLatLng), {opacity: 0.5});
+
     canvasLayer.addTo(map);
 
-    imageObj.crossOrigin = 'anonymous';
-    imageObj.onload = function() {
+    // Allows the canvas to manipulate the data
+    image.crossOrigin = 'anonymous';
+    image.onload = function() {
       var w = this.width,
           h = this.height,
           ctx = frictionCanvas.getContext('2d');
 
       ctx.drawImage(this, 0, 0);
 
-      draw(frictionCanvas, canvasLayer.canvas, pixel);
+      draw(frictionCanvas, canvasLayer.canvas, originPixel);
     };
-    imageObj.src = frictionUrl;
+    // Triggers onload
+    image.src = frictionUrl;
 
     // For debugging:
     // canvasLayer.canvas.width = stitchedCanvas.width;
