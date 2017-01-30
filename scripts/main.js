@@ -7,7 +7,7 @@
       halfSidePx = sidePx/2,
       gm = new GlobalMercator(),
       map = L.map('map'),
-      layerUrl = 'https://{s}.tiles.mapbox.com/v3/atogle.map-vo4oycva/{z}/{x}/{y}.png',
+      layerUrl = 'https://api.mapbox.com/styles/v1/mapbox/light-v9/tiles/256/{z}/{x}/{y}?access_token=pk.eyJ1IjoiYXRvZ2xlIiwiYSI6InBDWEFUY3cifQ.0XD7J9ZuFNLrmuNpuKlcnQ',
       attribution = 'Map data &copy; OpenStreetMap contributors, CC-BY-SA <a href="http://mapbox.com/about/maps" target="_blank">Terms &amp; Feedback</a>',
       layer = L.tileLayer(layerUrl, {maxZoom: 17, attribution: attribution, subdomains: 'abcd'}),
       canvasLayer;
